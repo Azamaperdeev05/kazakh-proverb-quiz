@@ -4,7 +4,7 @@ import { Button, Card, Container } from '@/components/ui'
 import { borderRadius, colors, iconSize, spacing, typography, withOpacity } from '@/constants/design'
 import type { QuizSessionResult } from '@/types/quiz'
 
-export function ResultView({ isDark, result, onRestart, onHome }: { isDark: boolean; result: (QuizSessionResult & { message: string }) | null; onRestart: () => void; onHome: () => void }) {
+export function ResultView({ isDark, result, onRestart, onHome, onLeaderboard }: { isDark: boolean; result: (QuizSessionResult & { message: string }) | null; onRestart: () => void; onHome: () => void; onLeaderboard: () => void }) {
   if (!result) return null
   const ratio = result.total > 0 ? Math.round((result.correct / result.total) * 100) : 0
   const cardStyle = StyleSheet.flatten([styles.card, { backgroundColor: isDark ? colors.backgroundDarkSecondary : colors.background }])
@@ -32,6 +32,7 @@ export function ResultView({ isDark, result, onRestart, onHome }: { isDark: bool
 
         <View style={styles.actions}>
           <Button fullWidth size="lg" onPress={onRestart}>Қайта ойнау</Button>
+          <Button fullWidth size="lg" variant="secondary" onPress={onLeaderboard}>Leaderboard</Button>
           <Button fullWidth size="lg" variant="outline" onPress={onHome}>Басты бет</Button>
         </View>
       </View>

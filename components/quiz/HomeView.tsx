@@ -6,12 +6,15 @@ import { TOTAL_PROVERBS } from '@/data/proverbs'
 import type { GameMode, StoredQuizState } from '@/types/quiz'
 import { ModeCard } from './ModeCard'
 
-export function HomeView({ isDark, state, selectedMode, onSelectMode, onStart }: {
+export function HomeView({ isDark, state, selectedMode, onSelectMode, onStart, onOpenProfile, onOpenLeaderboard, onOpenSettings }: {
   isDark: boolean
   state: StoredQuizState | null
   selectedMode: GameMode
   onSelectMode: (mode: GameMode) => void
   onStart: () => void
+  onOpenProfile: () => void
+  onOpenLeaderboard: () => void
+  onOpenSettings: () => void
 }) {
   const progress = state?.progress
   const accuracy = progress?.totalAnswered ? Math.round((progress.totalCorrect / progress.totalAnswered) * 100) : 0
@@ -55,6 +58,12 @@ export function HomeView({ isDark, state, selectedMode, onSelectMode, onStart }:
         </View>
 
         <Button size="lg" fullWidth onPress={onStart} rightIcon={<Ionicons name="arrow-forward" size={iconSize.md} color={colors.white} />}>Бастау</Button>
+
+        <View style={styles.quickActions}>
+          <Button variant="outline" onPress={onOpenProfile}>Профиль</Button>
+          <Button variant="outline" onPress={onOpenLeaderboard}>Leaderboard</Button>
+          <Button variant="outline" onPress={onOpenSettings}>Settings</Button>
+        </View>
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: isDark ? colors.textDark : colors.text }]}>Үздік нәтижелер</Text>
@@ -111,6 +120,7 @@ const styles = StyleSheet.create({
   section: { gap: spacing.md },
   sectionTitle: { ...typography.h3 },
   modeList: { gap: spacing.md },
+  quickActions: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
   leaderboard: { borderRadius: borderRadius.xl },
   emptyText: { ...typography.body },
   rankRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },

@@ -1,12 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { PROVERBS } from '@/data/proverbs'
+import { PROVERBS, TOTAL_PROVERBS } from '@/data/proverbs'
 import { getStoredState, saveSessionResult, updateSettings } from '@/services/quizStorage'
-import type { GameMode, ProverbItem, QuizSessionResult, StoredQuizState } from '@/types/quiz'
+import type { AppScreen, GameMode, ProverbItem, QuizSessionResult, StoredQuizState, ThemePreference } from '@/types/quiz'
 import { getHintText, getPerformanceMessage, getQuestionsForMode, isAcceptedInput, normalizeText, shuffleArray } from '@/utils/quiz'
+
+const MODE_LABELS: Record<GameMode, string> = {
+  multiple_choice: 'Таңдау',
+  input: 'Енгізу',
+  time_attack: '30 секунд',
+  daily: 'Күнделікті сынақ',
+}
 
 export function useQuizGame() {
   const [storedState, setStoredState] = useState<StoredQuizState | null>(null)
-  const [screen, setScreen] = useState<'home' | 'game' | 'result'>('home')
+  const [screen, setScreen] = useState<AppScreen>('home')
   const [mode, setMode] = useState<GameMode>('multiple_choice')
   const [questions, setQuestions] = useState<ProverbItem[]>([])
   const [index, setIndex] = useState(0)
@@ -20,20 +27,21 @@ export function useQuizGame() {
   const [result, setResult] = useState<(QuizSessionResult & { message: string }) | null>(null)
   const finishedRef = useRef(false)
 
-  useEffect(() => {
-    getStoredState().then(setStoredState)
-  }, [])
+  const refreshStoredState = async () => {
+    const next = await getStoredState()
+    setStoredState(next)
+    if (screen === 'home') setMode(next.settings.lastMode)
+    return next
+  }
 
   useEffect(() => {
-    if (storedState && screen === 'home') {
-      setMode(storedState.settings.lastMode)
-    }
-  }, [storedState, screen])
+    void refreshStoredState()
+  }, [])
 
   useEffect(() => {
     if (screen !== 'game' || mode !== 'time_attack') return
     if (timeLeft <= 0) {
-      finishSession()
+      void finishSession()
       return
     }
 
@@ -43,12 +51,30 @@ export function useQuizGame() {
 
   const currentQuestion = questions[index] ?? null
 
-  const completionRatio = useMemo(() => {
-    if (!storedState) return 0
-    return storedState.progress.totalAnswered === 0
-      ? 0
-      : storedState.progress.totalCorrect / storedState.progress.totalAnswered
+  const stats = useMemo(() => {
+    const progress = storedState?.progress
+    const recentResults = storedState?.recentResults ?? []
+    const accuracyRate = progress?.totalAnswered ? progress.totalCorrect / progress.totalAnswered : 0
+    const averageScore = recentResults.length
+      ? recentResults.reduce((sum, entry) => sum + entry.score, 0) / recentResults.length
+      : 0
+
+    return {
+      accuracyRate,
+      averageScore,
+      learnedCount: progress?.learnedIds.length ?? 0,
+      completionRate: TOTAL_PROVERBS ? (progress?.learnedIds.length ?? 0) / TOTAL_PROVERBS : 0,
+      gamesPlayed: progress?.gamesPlayed ?? 0,
+      streakDays: progress?.streakDays ?? 0,
+      bestStreak: progress?.bestStreak ?? 0,
+      totalPlayTimeMs: progress?.totalPlayTimeMs ?? 0,
+      perModeBestScores: storedState?.perModeBestScores ?? { multiple_choice: 0, input: 0, time_attack: 0, daily: 0 },
+    }
   }, [storedState])
+
+  const leaderboardOverall = storedState?.leaderboard ?? []
+  const leaderboardRecent = storedState?.recentResults ?? []
+  const getModeLeaderboard = (targetMode: GameMode) => leaderboardOverall.filter((entry) => entry.mode === targetMode)
 
   const startGame = async (nextMode: GameMode) => {
     finishedRef.current = false
@@ -68,19 +94,27 @@ export function useQuizGame() {
     setStoredState(nextState)
   }
 
-  const goHome = () => {
+  const navigateTo = (nextScreen: AppScreen) => {
+    setScreen(nextScreen)
+    if (nextScreen !== 'game') {
+      setFeedback(null)
+      setInputValue('')
+      setRevealedHint(null)
+    }
+  }
+
+  const goHome = async () => {
     finishedRef.current = false
-    setScreen('home')
-    setFeedback(null)
-    setInputValue('')
-    setRevealedHint(null)
+    await refreshStoredState()
+    navigateTo('home')
   }
 
   const nextQuestion = () => {
     if (mode !== 'time_attack' && index >= questions.length - 1) {
-      finishSession()
+      void finishSession()
       return
     }
+
     setIndex((value) => (mode === 'time_attack' ? value + 1 : Math.min(value + 1, questions.length - 1)))
     setInputValue('')
     setFeedback(null)
@@ -88,11 +122,11 @@ export function useQuizGame() {
   }
 
   const submitAnswer = (answer: string) => {
-    if (!currentQuestion || feedback) return
+    if (!currentQuestion || feedback) return null
     const value = normalizeText(answer)
     if (!value) {
       setFeedback({ type: 'wrong', message: 'Жауапты бос қалдырмаңыз.' })
-      return
+      return { correct: false }
     }
 
     const isCorrect = mode === 'input'
@@ -111,10 +145,12 @@ export function useQuizGame() {
 
     if (mode === 'time_attack') {
       setTimeout(() => {
-        if (timeLeft <= 1 || index >= questions.length - 1) finishSession(isCorrect, gained)
+        if (timeLeft <= 1 || index >= questions.length - 1) void finishSession(isCorrect, gained)
         else nextQuestion()
       }, 650)
     }
+
+    return { correct: isCorrect, gained }
   }
 
   const finishSession = async (lastCorrect = false, lastGain = 0) => {
@@ -123,55 +159,67 @@ export function useQuizGame() {
     const total = mode === 'time_attack' ? Math.min(index + (feedback ? 1 : 0), questions.length) : questions.length
     const finalScore = score + (feedback ? 0 : lastGain)
     const finalCorrect = correctCount + (feedback ? 0 : (lastCorrect ? 1 : 0))
-    const answeredIds = questions.slice(0, total).map((item) => item.id)
     const payload: QuizSessionResult = {
       mode,
       score: finalScore,
       correct: finalCorrect,
       total,
-      answeredIds,
+      answeredIds: questions.slice(0, total).map((item) => item.id),
       durationMs: Date.now() - startedAt,
     }
+
     const nextState = await saveSessionResult(payload)
     setStoredState(nextState)
-    setResult({
-      ...payload,
-      message: getPerformanceMessage(finalScore, total > 0 ? finalCorrect / total : 0),
-    })
+    setResult({ ...payload, message: getPerformanceMessage(finalScore, total > 0 ? finalCorrect / total : 0) })
     setScreen('result')
   }
 
   const useHint = () => {
-    if (!currentQuestion) return
+    if (!currentQuestion || !storedState?.settings.inputHints) return
     setRevealedHint(getHintText(currentQuestion.answer))
   }
 
-  const multipleChoiceOptions = useMemo(() => {
-    if (!currentQuestion) return []
-    return shuffleArray(currentQuestion.options)
-  }, [currentQuestion])
+  const updateAppSettings = async (patch: Partial<StoredQuizState['settings']>) => {
+    const next = await updateSettings(patch)
+    setStoredState(next)
+  }
+
+  const setThemePreference = (preferredTheme: ThemePreference) => updateAppSettings({ preferredTheme })
+  const toggleSound = (soundEnabled: boolean) => updateAppSettings({ soundEnabled })
+  const toggleHaptics = (hapticsEnabled: boolean) => updateAppSettings({ hapticsEnabled })
+  const toggleHints = (inputHints: boolean) => updateAppSettings({ inputHints })
 
   return {
     storedState,
     screen,
     mode,
+    modeLabels: MODE_LABELS,
     currentQuestion,
     questionNumber: index + 1,
-    totalQuestions: mode === 'time_attack' ? questions.length : questions.length,
+    totalQuestions: questions.length,
     score,
     inputValue,
     setInputValue,
     feedback,
     timeLeft,
     revealedHint,
-    completionRatio,
-    multipleChoiceOptions,
+    multipleChoiceOptions: currentQuestion ? shuffleArray(currentQuestion.options) : [],
     result,
+    stats,
+    leaderboardOverall,
+    leaderboardRecent,
+    getModeLeaderboard,
+    refreshStoredState,
+    navigateTo,
     startGame,
     setMode,
     submitAnswer,
     nextQuestion,
     goHome,
     useHint,
+    setThemePreference,
+    toggleSound,
+    toggleHaptics,
+    toggleHints,
   }
 }
