@@ -23,62 +23,62 @@
 
 export const colors = {
   // Brand Colors
-  primary: '#2563EB',
-  primaryDark: '#1E40AF',
-  primaryLight: '#3B82F6',
-  primaryTint: '#DBEAFE',
+  primary: '#B85C38',
+  primaryDark: '#8E4327',
+  primaryLight: '#D7855F',
+  primaryTint: '#F8E1D7',
 
-  secondary: '#64748B',
-  secondaryDark: '#475569',
-  secondaryLight: '#94A3B8',
-  secondaryTint: '#F1F5F9',
+  secondary: '#6F7C58',
+  secondaryDark: '#536042',
+  secondaryLight: '#9AA688',
+  secondaryTint: '#EEF2E7',
 
-  accent: '#8B5CF6',
-  accentDark: '#7C3AED',
-  accentLight: '#A78BFA',
-  accentTint: '#EDE9FE',
+  accent: '#C08B2C',
+  accentDark: '#93691F',
+  accentLight: '#D8AD59',
+  accentTint: '#F8EBCB',
 
   // Background Colors
-  background: '#FFFFFF',
-  backgroundSecondary: '#F8FAFC',
-  backgroundTertiary: '#F1F5F9',
+  background: '#FFFDF8',
+  backgroundSecondary: '#F6F0E7',
+  backgroundTertiary: '#E9DFD2',
 
   // Dark Mode Backgrounds
-  backgroundDark: '#0F172A',
-  backgroundDarkSecondary: '#1E293B',
-  backgroundDarkTertiary: '#334155',
+  backgroundDark: '#1E1915',
+  backgroundDarkSecondary: '#2A231E',
+  backgroundDarkTertiary: '#3B312A',
 
   // Text Colors
-  text: '#1E293B',
-  textSecondary: '#64748B',
-  textTertiary: '#94A3B8',
-  textDisabled: '#CBD5E1',
+  text: '#241A15',
+  textSecondary: '#6D5D54',
+  textTertiary: '#A08D81',
+  textDisabled: '#D2C5BA',
 
   // Dark Mode Text
-  textDark: '#F1F5F9',
-  textDarkSecondary: '#CBD5E1',
-  textDarkTertiary: '#94A3B8',
+  textDark: '#F6EFE7',
+  textDarkSecondary: '#D7C8BC',
+  textDarkTertiary: '#A89486',
 
   // Semantic Colors
-  success: '#10B981',
-  successDark: '#059669',
-  successLight: '#34D399',
-  successTint: '#D1FAE5',
+  success: '#5F8B4C',
+  successDark: '#456535',
+  successLight: '#84A76F',
+  successTint: '#DFEAD8',
 
-  error: '#EF4444',
-  errorDark: '#DC2626',
-  errorLight: '#F87171',
-  errorTint: '#FEE2E2',
+  error: '#C4574B',
+  errorDark: '#953C33',
+  errorLight: '#DB8178',
+  errorTint: '#F7DEDA',
 
-  warning: '#F59E0B',
-  warningDark: '#D97706',
-  warningLight: '#FBBF24',
-  warningTint: '#FEF3C7',
+  warning: '#D79B2D',
+  warningDark: '#9D6E16',
+  warningLight: '#E6BA63',
+  warningTint: '#FBEDCC',
 
-  info: '#3B82F6',
-  infoDark: '#2563EB',
-  infoLight: '#60A5FA',
-  infoTint: '#DBEAFE',
+  info: '#8A6A4A',
+  infoDark: '#694F36',
+  infoLight: '#AD8A67',
+  infoTint: '#EFE2D5',
 
   // Border Colors
   border: '#E2E8F0',

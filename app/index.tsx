@@ -1,59 +1,70 @@
-import { View, Text, StyleSheet, Image } from 'react-native';
-import { Card, Button } from '@/components/ui';
-import { colors, spacing, typography } from '@/constants/design';
+import { useColorScheme } from 'react-native'
+import { HomeView } from '@/components/quiz/HomeView'
+import { GameView } from '@/components/quiz/GameView'
+import { ResultView } from '@/components/quiz/ResultView'
+import { useQuizGame } from '@/hooks/useQuizGame'
 
-export default function Home() {
+export default function HomeScreen() {
+  const systemScheme = useColorScheme()
+  const {
+    storedState,
+    screen,
+    mode,
+    setMode,
+    currentQuestion,
+    questionNumber,
+    totalQuestions,
+    score,
+    inputValue,
+    setInputValue,
+    feedback,
+    timeLeft,
+    revealedHint,
+    multipleChoiceOptions,
+    result,
+    startGame,
+    submitAnswer,
+    nextQuestion,
+    goHome,
+    useHint,
+  } = useQuizGame()
+
+  const preferredTheme = storedState?.settings.preferredTheme ?? 'system'
+  const isDark = preferredTheme === 'system' ? systemScheme === 'dark' : preferredTheme === 'dark'
+
+  if (screen === 'game') {
+    return (
+      <GameView
+        isDark={isDark}
+        mode={mode}
+        question={currentQuestion}
+        score={score}
+        questionNumber={questionNumber}
+        totalQuestions={totalQuestions}
+        timeLeft={timeLeft}
+        feedback={feedback}
+        inputValue={inputValue}
+        onChangeInput={setInputValue}
+        onSubmit={submitAnswer}
+        onNext={nextQuestion}
+        onUseHint={useHint}
+        hint={storedState?.settings.inputHints ? revealedHint : null}
+        options={multipleChoiceOptions}
+      />
+    )
+  }
+
+  if (screen === 'result') {
+    return <ResultView isDark={isDark} result={result} onRestart={() => startGame(mode)} onHome={goHome} />
+  }
+
   return (
-    <View style={styles.container}>
-      <Card variant="elevated" style={styles.card}>
-        <Card.Content>
-          <Image
-            source={require('@/assets/images/icon.png')}
-            style={styles.icon}
-            resizeMode="contain"
-          />
-          <Text style={styles.title}>Welcome to Blink!</Text>
-          <Text style={styles.description}>
-            Let's start developing your mobile app
-          </Text>
-        </Card.Content>
-        <Card.Footer>
-          <Button variant="primary" onPress={() => console.log('Get Started!')}>
-            Get Started
-          </Button>
-        </Card.Footer>
-      </Card>
-    </View>
-  );
+    <HomeView
+      isDark={isDark}
+      state={storedState}
+      selectedMode={mode}
+      onSelectMode={setMode}
+      onStart={() => startGame(mode)}
+    />
+  )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundSecondary,
-    justifyContent: 'center',
-    padding: spacing.lg,
-  },
-  card: {
-    maxWidth: 400,
-    alignSelf: 'center',
-    width: '100%',
-  },
-  icon: {
-    width: 80,
-    height: 80,
-    alignSelf: 'center',
-    marginBottom: spacing.md,
-  },
-  title: {
-    ...typography.h2,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  description: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-}); 
